@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { validateImage } from "../utils/validation";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import api from "../utils/axios";
 import { updateUser } from "../redux/slices/authSlice";
 import { logout } from "../redux/slices/authSlice";
 import { AxiosError } from "axios";
 import { validate } from "../utils/validation";
+import { RootState } from "../redux/store";
 
 const ProfilePage = () => {
+  interface userType{
+    name : string,
+    email : string,
+    image : string,
+    userID : string
+  }
   const userstring = localStorage.getItem("user");
   const user = userstring ? JSON.parse(userstring) : null;
   const dispatch = useDispatch();
+  const userDataRedux = useSelector((state:RootState)=>state.auth.user);
   const [name, setName] = useState(user?.name || "");
   const [file, setFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(user?.image || "");
@@ -19,6 +27,8 @@ const ProfilePage = () => {
   const [passwordLoader,setPasswordLoder] = useState(false);
   const[password,setPassword] = useState("");
   const[cPassword,setCpassword] = useState("")
+  const [userData,setUserData] = useState<userType | null>(null);
+
 
   useEffect(() => {
     setImagePreview(user?.image || "");
@@ -38,9 +48,15 @@ const ProfilePage = () => {
       return;
     }
 
+    if (imagePreview && imagePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
     setFile(selectedFile);
-    setImagePreview(URL.createObjectURL(selectedFile));
+    const newPreviewUrl = URL.createObjectURL(selectedFile);
+    setImagePreview(newPreviewUrl);
   };
+
 
   const updateProfile = async (e:any) => {
     e.preventDefault();
@@ -72,16 +88,18 @@ const ProfilePage = () => {
         withCredentials: true, 
       });
       
-      const userData = response.data.user
-     dispatch(updateUser({userData}))
-      toast.success(response.data.message);
+      if (response.data.status) {
+        setUserData(response.data.user); 
+        dispatch(updateUser({ userData: response.data.user }));
+        toast.success(response.data.message);
+      }
       
     } catch (err:unknown) {
       const error = err as AxiosError;
       if (error.response) {
         const status = error.response.status;
         if (status === 401 || status === 403) {
-          toast.error("Session expired. Please log in again.");
+          toast.error((error.response?.data as { message: string })?.message || "An error occurred");
           dispatch(logout());
         } else {
           toast.error("Failed to update profile");
@@ -107,8 +125,20 @@ const ProfilePage = () => {
       toast.error('Passowrd and Confirm Password mismached');
       return
       }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Unauthorized: No token found");
+        dispatch(logout());
+        return;
+      }
     
-    const response =await api.patch('/updatePassword',{password,userID:user._id});
+    const response =await api.patch('/updatePassword',{password,userID:user.userID}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      withCredentials: true, 
+    });
     if(!response.data.status){
     toast.error(response.data.message);
     }
@@ -142,7 +172,7 @@ setPasswordLoder(false)
           <div className="flex flex-col items-center mb-4">
             <label htmlFor="profilePic" className="cursor-pointer">
               <img
-                src={imagePreview || "https://via.placeholder.com/150"}
+                src={imagePreview || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"}
                 alt="Profile"
                 className="w-24 h-24 rounded-full border-4 border-gray-300 object-cover"
               />

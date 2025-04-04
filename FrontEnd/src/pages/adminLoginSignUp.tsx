@@ -5,6 +5,7 @@ import api from "../utils/axios";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { login } from "../redux/slices/adminAuthSlice";
+import { AxiosError } from "axios";
 
 const AdminAuthPage = () => {
   const navigate = useNavigate()
@@ -68,9 +69,11 @@ const AdminAuthPage = () => {
         dispatch(login({ user, token }));
         toast.success("Login successful!");
         navigate('/admin/');
-      } catch (error) {
-        console.error("Login Error:", error);
-        toast.error("Invalid credentials. Please try again.");
+      } catch (err) {
+        const error = err as AxiosError;
+        const errorMessage = (error.response?.data as { message?: string })?.message || "Something went wrong!";
+        toast.error(errorMessage);
+        
       } finally {
         setLoginLoader(false);
       }
@@ -199,7 +202,7 @@ const AdminAuthPage = () => {
             type="submit"
           >
             {loginLoader || signUpLoader ? (
-              <span className="loader"></span>
+              <div className="w-6 h-6 border-4 border-gray-300 border-t-white rounded-full animate-spin"></div>
             ) : (
               isLogin ? "Login" : "Create Account"
             )}

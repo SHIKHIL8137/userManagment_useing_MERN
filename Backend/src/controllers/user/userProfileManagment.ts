@@ -6,7 +6,11 @@ import bcrypt from "bcrypt";
 export const userUpdate = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userID, name } = req.body;
-    console.log('hi',req.body);
+    const existUser = await UserAdmin.findById(userID);
+    if(!existUser){
+      res.status(401).json({status:false,message:'User Not Found'});
+      return 
+    }
 
     const nameValidation = validate("name", name);
     if (!nameValidation.isValid) {
@@ -20,7 +24,7 @@ export const userUpdate = async (req: Request, res: Response): Promise<void> => 
     if (name) updateData.name = name;
     if (imageUrl) updateData.image = imageUrl;
 
-    const userdata = await UserAdmin.findByIdAndUpdate(userID, updateData);
+    const userdata = await UserAdmin.findByIdAndUpdate(userID, updateData, { new: true });
     
    const user = {
     name : userdata?.name,
@@ -28,7 +32,7 @@ export const userUpdate = async (req: Request, res: Response): Promise<void> => 
     image:userdata?.image,
     userID:userdata?._id
    }
-console.log(user)
+
     res.status(200).json({
       status: true,
       message: "User updated successfully",
@@ -45,9 +49,15 @@ export const updatePassword = async(req:Request,res:Response):Promise<void>=>{
   try {
     const {password,userID} = req.body;
 
+    const existUser = await UserAdmin.findById(userID);
+
+    if(!existUser){
+      res.status(401).json({status:false,message:'User Not Found'});
+      return 
+    }
     const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
-    const user = await UserAdmin.findByIdAndUpdate(userID,{password:hashedPassword})
+     await UserAdmin.findByIdAndUpdate(userID,{password:hashedPassword})
     res.status(200).json({status:true,message:"Password Updated!"})
   } catch (error) {
     console.error("Error in User Update:", error);

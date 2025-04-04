@@ -9,9 +9,7 @@ interface AuthRequest extends Request {
 }
 
 export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunction):void => {
-  console.log('hiii')
   const token = req.cookies.token;
-console.log(token)
   if (!token) {
      res.status(401).json({ status: false, message: "Unauthorized" });
      return

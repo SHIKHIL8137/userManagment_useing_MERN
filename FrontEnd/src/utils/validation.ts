@@ -1,6 +1,6 @@
 const nameRegex = /^[A-Za-z\s]+$/;
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const passwordRegex = /^[0-9]{1,10}$/;
+const passwordRegex = /^[0-9]{6,10}$/;
 
 export const validate = (field: string, fieldValue: string) => {
   let isValid = false;

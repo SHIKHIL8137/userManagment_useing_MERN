@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 import { FaUser, FaLock } from "react-icons/fa";
-import axios from "axios";
 import {toast} from 'react-toastify'
 import { validate } from "../utils/validation";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +16,7 @@ const LoginSignUp = () => {
   const [email,setEmail] = useState('');
   const [password,setPassword] = useState('');
   const [cpassword,setCpassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate()
   const dispatch = useDispatch();
   const handler = (event:any)=>{
@@ -51,6 +51,7 @@ const submit =async(e:any)=>{
     }
 
     try {
+      setIsLoading(true);
       const response =await api.post(`/signUp`,data);
     if(!response.data.status){
     toast.error(response.data.message);
@@ -59,6 +60,8 @@ const submit =async(e:any)=>{
     setIsLogin(true);
     } catch (error:any) {
       toast.error(error.response?.data?.message || "Signup failed!");
+    }finally{
+      setIsLoading(false);
     }
   }else{
     const emailValidation = validate("email", email);
@@ -72,6 +75,7 @@ const submit =async(e:any)=>{
     }
    
     try {
+      setIsLoading(true);
       const response =await api.post(`/logIn`,data);
     if(!response.data.status){
     return toast.error(response.data.message);
@@ -82,7 +86,10 @@ const submit =async(e:any)=>{
     toast.success(response.data.message);
     navigate('/');
     } catch (error:any) {
+      console.log(error.response?.data?.message)
       toast.error(error.response?.data?.message || "Login failed");
+    }finally{
+      setIsLoading(false);
     }
   }
 }
@@ -139,9 +146,20 @@ const submit =async(e:any)=>{
             <label className="flex items-center space-x-2"> 
             </label>
           </div>
-          <button className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg" onClick={submit}>
-            {isLogin ? "LOGIN" : "SIGN UP"}
-          </button>
+           <div className="flex flex-col items-center space-y-4">
+      <button
+        className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg flex items-center justify-center"
+        onClick={submit}
+        disabled={isLoading} 
+      >
+        {isLoading ? (
+          <div className="w-6 h-6 border-4 border-gray-300 border-t-white rounded-full animate-spin"></div>
+        ) : (
+          isLogin ? "LOGIN" : "SIGN UP"
+        )}
+      </button>
+
+    </div>
         </form>
         <p className="text-gray-400 text-center mt-4">
           {isLogin ? "Don't have an account?" : "Already have an account?"}

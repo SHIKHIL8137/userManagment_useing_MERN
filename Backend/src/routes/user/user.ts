@@ -1,7 +1,7 @@
 
 import express,{ Request, Response } from 'express';
 import { Home } from '../../controllers/user/userHome';
-import { LogIn, SignUp } from '../../controllers/user/userAuth';
+import { LogIn, SignUp ,validateToken} from '../../controllers/user/userAuth';
 import { updatePassword, userUpdate } from '../../controllers/user/userProfileManagment';
 import { upload } from '../../config/multer';
 import { authenticateJWT } from '../../middleware/authUser';
@@ -13,5 +13,6 @@ route.post("/signUp",SignUp);
 route.post('/logIn',LogIn);
 route.patch("/updateUser",authenticateJWT,upload.single("image"), userUpdate);
 route.patch('/updatePassword',authenticateJWT,updatePassword);
+route.get("/validateToken", authenticateJWT, validateToken);
 
 export default route

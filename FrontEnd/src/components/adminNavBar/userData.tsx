@@ -4,6 +4,9 @@ import api from '../../utils/axios';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../Loader';
 import { validate } from '../../utils/validation';
+import { AxiosError } from "axios";
+import { logout } from '../../redux/slices/adminAuthSlice';
+import { useDispatch } from 'react-redux';
 
 const UserData = () => {
   interface User {
@@ -27,28 +30,28 @@ const UserData = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch()
   const usersPerPage = 10;
   
-  // Add search state
+
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
-  // Debouncing effect
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 500); // 500ms delay
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Handle search input change
+ 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1); 
   };
 
-  // Modified fetchUsers to include search parameter
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -59,14 +62,25 @@ const UserData = () => {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error) {
-      toast.error("Failed to fetch users");
+    } catch (err) {
+      const error = err as AxiosError;
+            if (error.response) {
+              const status = error.response.status;
+              if (status === 401 || status === 403) {
+                 toast.error((error.response?.data as { message: string })?.message || "An error occurred");
+                dispatch(logout());
+              } else {
+                toast.error("Failed to update profile");
+              }
+            } else {
+              toast.error("Network error or server not responding.");
+            }
     } finally {
       setLoading(false);
     }
   }, [currentPage, debouncedSearchTerm]);
 
-  // Update useEffect to depend on debouncedSearchTerm
+
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
@@ -93,8 +107,19 @@ const UserData = () => {
         } else {
           toast.error(response.data.message || 'Failed to delete user');
         }
-      } catch (error) {
-        toast.error('Failed to delete user');
+      } catch (err) {
+        const error = err as AxiosError;
+              if (error.response) {
+                const status = error.response.status;
+                if (status === 401 || status === 403) {
+                  toast.error((error.response?.data as { message: string })?.message || "An error occurred");
+                  dispatch(logout());
+                } else {
+                  toast.error("Failed to update profile");
+                }
+              } else {
+                toast.error("Network error or server not responding.");
+              }
       }
     }
   };
@@ -158,9 +183,19 @@ const UserData = () => {
           setCurrentPage(Math.ceil((totalUsers + 1) / usersPerPage));
         }
         setTotalUsers(totalUsers + 1);
-      } catch (error) {
-        console.log(error)
-        toast.error('Operation failed');
+      } catch (err) {
+        const error = err as AxiosError;
+              if (error.response) {
+                const status = error.response.status;
+                if (status === 401 || status === 403) {
+                  toast.error((error.response?.data as { message: string })?.message || "An error occurred");
+                  dispatch(logout());
+                } else {
+                  toast.error("Failed to update profile");
+                }
+              } else {
+                toast.error("Network error or server not responding.");
+              }
       } finally {
         setShowModal(false);
       }
@@ -191,8 +226,19 @@ const UserData = () => {
 
           toast.success('User updated successfully');
         }
-      } catch (error) {
-        toast.error('Operation failed');
+      } catch (err) {
+        const error = err as AxiosError;
+              if (error.response) {
+                const status = error.response.status;
+                if (status === 401 || status === 403) {
+                   toast.error((error.response?.data as { message: string })?.message || "An error occurred");
+                  dispatch(logout());
+                } else {
+                  toast.error("Failed to update profile");
+                }
+              } else {
+                toast.error("Network error or server not responding.");
+              }
       } finally {
         setShowModal(false);
       }

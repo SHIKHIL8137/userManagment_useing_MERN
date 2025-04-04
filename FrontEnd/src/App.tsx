@@ -11,24 +11,60 @@ import { useDispatch } from "react-redux";
 import { login } from "./redux/slices/authSlice";
 import AdminAuthPage from './pages/adminLoginSignUp';
 import AdminDashboard from './pages/adminDashboard';
+import { toast } from 'react-toastify';
+import { logout } from './redux/slices/authSlice';
+import api from './utils/axios';
+import { AxiosError } from 'axios';
+
 
 
 
 
 function App() {
   const dispatch = useDispatch();
+
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userString = localStorage.getItem("user");
-    const user = userString ? JSON.parse(userString) : null
-    if (token) {
-      dispatch(login({ user, token })); 
-    }
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        dispatch(logout());
+        return;
+      }
+
+      try {
+        const response = await api.get("/validateToken", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data.status) {
+          dispatch(login({ user: response.data.user, token }));
+        } else {
+          throw new Error("Invalid user data");
+        }
+      } catch (err) {
+        const error = err as AxiosError;
+              if (error.response) {
+                const status = error.response.status;
+                if (status === 401 || status === 403) {
+                  toast.error((error.response?.data as { message: string })?.message || "An error occurred");
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("user");
+                  dispatch(logout());
+                } else {
+                  toast.error("Failed to update profile");
+                }
+              } else {
+                toast.error("Network error or server not responding.");
+              }
+      }
+    };
+
+    fetchUserData();
   }, [dispatch]);
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={3000} style={{ top: '80px' }} />
       <Routes>
       <Route element={<PublicRoute />}>
           <Route path="/logIn" element={<LoginSignUpPage />} />
